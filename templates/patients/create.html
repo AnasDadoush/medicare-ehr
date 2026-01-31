@@ -1,0 +1,106 @@
+{% extends "layouts/dashboard_base.html" %}
+
+{% block title %}إضافة مريض جديد{% endblock %}
+
+{% block content %}
+<div class="card shadow">
+    <div class="card-header bg-primary text-white">
+        <h5 class="mb-0">إضافة مريض جديد</h5>
+    </div>
+    <div class="card-body">
+        <form id="createPatientForm">
+            <div class="row">
+                <div class="col-md-4 mb-3">
+                    <label class="form-label">الاسم الأول *</label>
+                    <input type="text" class="form-control" id="firstName" required>
+                </div>
+
+                <div class="col-md-4 mb-3">
+                    <label class="form-label">الاسم الأوسط</label>
+                    <input type="text" class="form-control" id="middleName">
+                </div>
+
+                <div class="col-md-4 mb-3">
+                    <label class="form-label">الاسم الأخير *</label>
+                    <input type="text" class="form-control" id="lastName" required>
+                </div>
+            </div>
+
+            <div class="row">
+                <div class="col-md-6 mb-3">
+                    <label class="form-label">الجنس</label>
+                    <select class="form-select" id="gender">
+                        <option value="">اختر الجنس</option>
+                        <option value="ذكر">ذكر</option>
+                        <option value="أنثى">أنثى</option>
+                    </select>
+                </div>
+
+                <div class="col-md-6 mb-3">
+                    <label class="form-label">تاريخ الميلاد</label>
+                    <input type="date" class="form-control" id="birthDate">
+                </div>
+            </div>
+
+            <div class="row">
+                <div class="col-md-6 mb-3">
+                    <label class="form-label">رقم الهاتف</label>
+                    <input type="tel" class="form-control" id="phoneNumber">
+                </div>
+
+                <div class="col-md-6 mb-3">
+                    <label class="form-label">ملاحظات إضافية</label>
+                    <textarea class="form-control" id="notes" rows="1"></textarea>
+                </div>
+            </div>
+
+            <div class="mt-4">
+                <button type="submit" class="btn btn-primary">
+                    <i class="fas fa-save"></i> حفظ
+                </button>
+                <a href="{{ url_for('patients.patients_page') }}" class="btn btn-secondary">
+                    <i class="fas fa-times"></i> إلغاء
+                </a>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+    document.getElementById('createPatientForm').addEventListener('submit', function (e) {
+        e.preventDefault();
+
+        // جمع البيانات
+        const patientData = {
+            first_name: document.getElementById('firstName').value,
+            middle_name: document.getElementById('middleName').value,
+            last_name: document.getElementById('lastName').value,
+            gender: document.getElementById('gender').value,
+            birth_date: document.getElementById('birthDate').value,
+            phone_number: document.getElementById('phoneNumber').value
+        };
+
+        // إرسال الطلب
+        fetch('/api/patients', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(patientData)
+        })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    alert(data.message);
+                    window.location.href = '/patients/' + data.patient.id;
+                } else {
+                    alert('خطأ: ' + data.message);
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('حدث خطأ في الاتصال بالخادم');
+            });
+    });
+</script>
+{% endblock %}

@@ -1,0 +1,358 @@
+{% extends "layouts/dashboard_base.html" %}
+
+{% block title %}معاينة المريض - {{ patient.full_name() }}{% endblock %}
+
+{% block content %}
+<!-- رأس الصفحة -->
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h4 class="mb-1">
+            <i class="fas fa-user me-2"></i>{{ patient.full_name() }}
+        </h4>
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item"><a href="/patients">المرضى</a></li>
+                <li class="breadcrumb-item active">معاينة المريض</li>
+            </ol>
+        </nav>
+    </div>
+    <div>
+        <a href="{{ url_for('patients.patients_page') }}" class="btn btn-secondary">
+            <i class="fas fa-arrow-right"></i> رجوع
+        </a>
+        <a href="{{ url_for('patients.edit_patient_page', patient_id=patient.id) }}" class="btn btn-primary">
+            <i class="fas fa-edit"></i> تعديل
+        </a>
+    </div>
+</div>
+
+<div class="row">
+    <!-- معلومات المريض الأساسية -->
+    <div class="col-md-4 mb-4">
+        <div class="card shadow">
+            <div class="card-header bg-info text-white">
+                <h5 class="mb-0"><i class="fas fa-id-card me-2"></i>معلومات الشخصية</h5>
+            </div>
+            <div class="card-body">
+                <div class="text-center mb-3">
+                    <div class="avatar-circle mb-3">
+                        {{ patient.first_name[0] if patient.first_name else '?' }}
+                    </div>
+                    <h5>{{ patient.full_name() }}</h5>
+                    <span class="badge bg-{{ 'primary' if patient.gender == 'ذكر' else 'warning' }}">
+                        {{ patient.gender or 'غير محدد' }}
+                    </span>
+                </div>
+
+                <ul class="list-group list-group-flush">
+                    <li class="list-group-item d-flex justify-content-between">
+                        <span><i class="fas fa-phone text-primary me-2"></i>رقم الهاتف</span>
+                        <strong>{{ patient.phone_number or 'غير محدد' }}</strong>
+                    </li>
+                    <li class="list-group-item d-flex justify-content-between">
+                        <span><i class="fas fa-birthday-cake text-success me-2"></i>تاريخ الميلاد</span>
+                        <strong>{{ patient.birth_date.strftime('%Y-%m-%d') if patient.birth_date else 'غير محدد'
+                            }}</strong>
+                    </li>
+                    <li class="list-group-item d-flex justify-content-between">
+                        <span><i class="fas fa-calendar-alt text-warning me-2"></i>تاريخ التسجيل</span>
+                        <strong>{{ patient.created_at.strftime('%Y-%m-%d') if patient.created_at else 'غير محدد'
+                            }}</strong>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <!-- الملف الطبي -->
+    <div class="col-md-8 mb-4">
+        <div class="card shadow">
+            <div class="card-header bg-success text-white d-flex justify-content-between align-items-center">
+                <h5 class="mb-0"><i class="fas fa-file-medical me-2"></i>الملف الطبي</h5>
+                <a href="{{ url_for('medical_profiles.update_medical_profile_page', patient_id=patient.id) }}"
+                    class="btn btn-light btn-sm">
+                    <i class="fas fa-edit"></i> تعديل الملف
+                </a>
+            </div>
+            <div class="card-body">
+                {% if medical_profile %}
+                <div class="row">
+                    <div class="col-md-3 mb-3">
+                        <h6>فصيلة الدم</h6>
+                        <div class="blood-type-display">
+                            <span class="badge bg-danger" style="font-size: 1.2em;">
+                                {{ medical_profile.blood_type or 'غير محدد' }}
+                            </span>
+                        </div>
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <h6>الطول</h6>
+                        <p class="mb-0">
+                            <i class="fas fa-ruler-vertical text-primary me-2"></i>
+                            {{ medical_profile.height or 'غير محدد' }} سم
+                        </p>
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <h6>الوزن</h6>
+                        <p class="mb-0">
+                            <i class="fas fa-weight text-warning me-2"></i>
+                            {{ medical_profile.weight or 'غير محدد' }} كجم
+                        </p>
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <h6>حالة BMI</h6>
+                        <p class="mb-0">
+                            {% if medical_profile.height and medical_profile.weight %}
+                            {% set bmi = (medical_profile.weight / ((medical_profile.height/100) ** 2))|round(1) %}
+                            <span class="badge bg-{{ 'success' if bmi >= 18.5 and bmi <= 24.9 else 'danger' }}">
+                                {{ bmi }}
+                            </span>
+                            {% else %}
+                            غير محسوب
+                            {% endif %}
+                        </p>
+                    </div>
+                </div>
+
+                <div class="row mt-3">
+                    <div class="col-md-6 mb-3">
+                        <h6>الأمراض المزمنة</h6>
+                        <div class="p-3 bg-light rounded">
+                            {{ medical_profile.chronic_diseases or 'لا يوجد' }}
+                        </div>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <h6>الحساسيات</h6>
+                        <div class="p-3 bg-light rounded">
+                            {{ medical_profile.allergies or 'لا يوجد' }}
+                        </div>
+                    </div>
+                </div>
+
+                {% if medical_profile.general_notes %}
+                <div class="row mt-3">
+                    <div class="col-12">
+                        <h6>ملاحظات عامة</h6>
+                        <div class="p-3 bg-light rounded">
+                            {{ medical_profile.general_notes }}
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
+                {% else %}
+                <div class="text-center py-5">
+                    <i class="fas fa-file-medical-alt fa-3x text-muted mb-3"></i>
+                    <p class="text-muted">لا يوجد ملف طبي لهذا المريض</p>
+                    <a href="{{ url_for('medical_profiles.update_medical_profile_page', patient_id=patient.id) }}"
+                        class="btn btn-primary">
+                        <i class="fas fa-plus"></i> إنشاء ملف طبي
+                    </a>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- الحالات المرضية (للأطباء والمديرين فقط) -->
+{% if current_user.role in ['ADMIN', 'DOCTOR'] %}
+<div class="card shadow mb-4">
+    <div class="card-header bg-warning text-white d-flex justify-content-between align-items-center">
+        <h5 class="mb-0"><i class="fas fa-stethoscope me-2"></i>السجل المرضي</h5>
+        <button class="btn btn-light btn-sm" data-bs-toggle="modal" data-bs-target="#addMedicalCaseModal">
+            <i class="fas fa-plus"></i> إضافة حالة جديدة
+        </button>
+    </div>
+    <div class="card-body">
+        {% if medical_cases %}
+        <div class="table-responsive">
+            <table class="table table-hover">
+                <thead>
+                    <tr>
+                        <th>#</th>
+                        <th>تاريخ الحالة</th>
+                        <th>التشخيص</th>
+                        <th>العلاج</th>
+                        <th>الطبيب المعالج</th>
+                        <th>الإجراءات</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for case in medical_cases %}
+                    <tr>
+                        <td>{{ loop.index }}</td>
+                        <td>{{ case.case_date.strftime('%Y-%m-%d') if case.case_date else '-' }}</td>
+                        <td>
+                            <strong>{{ case.case_description[:50] or 'لا يوجد وصف' }}</strong>
+                            {% if case.case_description|length > 50 %}...{% endif %}
+                        </td>
+                        <td>
+                            {{ case.treatment_details[:50] or 'لا يوجد علاج' }}
+                            {% if case.treatment_details|length > 50 %}...{% endif %}
+                        </td>
+                        <td>
+                            {% set doctor = doctors|selectattr('id', 'equalto', case.doctor_id)|first %}
+                            {{ doctor.full_name if doctor else 'غير معروف' }}
+                        </td>
+                        <td>
+                            <a href="{{ url_for('medical_cases.view_medical_case_page', case_id=case.id) }}"
+                                class="btn btn-sm btn-outline-info" title="معاينة">
+                                <i class="fas fa-eye"></i>
+                            </a>
+                            <a href="{{ url_for('medical_cases.edit_medical_case_page', case_id=case.id) }}"
+                                class="btn btn-sm btn-outline-primary" title="تعديل">
+                                <i class="fas fa-edit"></i>
+                            </a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div class="text-center py-4">
+            <i class="fas fa-clipboard-list fa-2x text-muted mb-2"></i>
+            <p class="text-muted">لا توجد حالات مرضية مسجلة</p>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endif %}
+
+<!-- Modal إضافة حالة مرضية (للأطباء والمديرين فقط) -->
+{% if current_user.role in ['ADMIN', 'DOCTOR'] %}
+<div class="modal fade" id="addMedicalCaseModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">إضافة حالة مرضية جديدة</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="addMedicalCaseForm">
+                    <input type="hidden" id="patientId" value="{{ patient.id }}">
+                    <input type="hidden" id="medicalProfileId"
+                        value="{{ medical_profile.id if medical_profile else '' }}">
+
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">تاريخ الحالة *</label>
+                            <input type="date" class="form-control" id="caseDate" required>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">الطبيب المعالج *</label>
+                            <select class="form-select" id="doctorId" required>
+                                <option value="">اختر الطبيب</option>
+                                {% for doctor in doctors %}
+                                <option value="{{ doctor.id }}" {% if doctor.id==current_user.id %}selected{% endif %}>
+                                    {{ doctor.full_name }}
+                                </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">وصف الحالة *</label>
+                        <textarea class="form-control" id="caseDescription" rows="3" required></textarea>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">تفاصيل العلاج</label>
+                        <textarea class="form-control" id="treatmentDetails" rows="2"></textarea>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">الأدوية الموصوفة</label>
+                            <textarea class="form-control" id="prescribedMedications" rows="2"></textarea>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">التحاليل والنتائج</label>
+                            <textarea class="form-control" id="labTestsResults" rows="2"></textarea>
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">المراكز الصحية التي تم زيارتها</label>
+                        <input type="text" class="form-control" id="visitedFacilities">
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">ملاحظات إضافية</label>
+                        <textarea class="form-control" id="additionalNotes" rows="2"></textarea>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">إلغاء</button>
+                <button type="button" class="btn btn-primary" onclick="saveMedicalCase()">حفظ الحالة</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    function saveMedicalCase() {
+        const caseData = {
+            medical_profile_id: document.getElementById('medicalProfileId').value,
+            doctor_id: document.getElementById('doctorId').value,
+            case_date: document.getElementById('caseDate').value,
+            case_description: document.getElementById('caseDescription').value,
+            treatment_details: document.getElementById('treatmentDetails').value,
+            prescribed_medications: document.getElementById('prescribedMedications').value,
+            lab_tests_and_results: document.getElementById('labTestsResults').value,
+            visited_facilities: document.getElementById('visitedFacilities').value,
+            additional_notes: document.getElementById('additionalNotes').value
+        };
+
+        fetch('/api/medical-cases', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(caseData)
+        })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    alert(data.message);
+                    location.reload();
+                } else {
+                    alert('خطأ: ' + data.message);
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('حدث خطأ في الاتصال بالخادم');
+            });
+    }
+</script>
+{% endif %}
+
+<style>
+    .blood-type-display {
+        font-size: 1.5rem;
+        text-align: center;
+    }
+
+    .list-group-item {
+        border: none;
+        padding: 0.75rem 0;
+    }
+
+    .avatar-circle {
+        width: 100px;
+        height: 100px;
+        background: #0d6efd;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin: 0 auto;
+        font-size: 40px;
+        color: white;
+        font-weight: bold;
+    }
+</style>
+{% endblock %}

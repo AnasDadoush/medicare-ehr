@@ -1,0 +1,140 @@
+{% extends "layouts/dashboard_base.html" %}
+
+{% block title %}تعديل حالة مرضية{% endblock %}
+
+{% block content %}
+<div class="card shadow">
+    <div class="card-header bg-warning text-white">
+        <h5 class="mb-0">تعديل حالة مرضية</h5>
+    </div>
+    <div class="card-body">
+        <form id="editMedicalCaseForm">
+            <input type="hidden" id="caseId" value="{{ medical_case.id }}">
+
+            <div class="row mb-4">
+                <div class="col-md-12">
+                    <div class="alert alert-info">
+                        <i class="fas fa-info-circle me-2"></i>
+                        المريض: <strong>{{ patient.full_name() if patient else 'غير معروف' }}</strong>
+                    </div>
+                </div>
+            </div>
+
+            <div class="row">
+                <div class="col-md-6 mb-3">
+                    <label class="form-label">تاريخ الحالة *</label>
+                    <input type="date" class="form-control" id="caseDate"
+                        value="{{ medical_case.case_date.strftime('%Y-%m-%d') if medical_case.case_date else '' }}"
+                        required>
+                </div>
+
+                {% if current_user.role == 'ADMIN' and doctors %}
+                <div class="col-md-6 mb-3">
+                    <label class="form-label">الطبيب المعالج *</label>
+                    <select class="form-select" id="doctorId" required>
+                        {% for doctor in doctors %}
+                        <option value="{{ doctor.id }}" {% if doctor.id==medical_case.doctor_id %}selected{% endif %}>
+                            {{ doctor.full_name }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                {% else %}
+                <div class="col-md-6 mb-3">
+                    <label class="form-label">الطبيب المعالج</label>
+                    <input type="text" class="form-control" value="{{ current_user.full_name }}" disabled>
+                    <input type="hidden" id="doctorId" value="{{ current_user.id }}">
+                </div>
+                {% endif %}
+            </div>
+
+            <div class="mb-3">
+                <label class="form-label">وصف الحالة *</label>
+                <textarea class="form-control" id="caseDescription" rows="3"
+                    required>{{ medical_case.case_description or '' }}</textarea>
+            </div>
+
+            <div class="mb-3">
+                <label class="form-label">تفاصيل العلاج</label>
+                <textarea class="form-control" id="treatmentDetails"
+                    rows="2">{{ medical_case.treatment_details or '' }}</textarea>
+            </div>
+
+            <div class="row">
+                <div class="col-md-6 mb-3">
+                    <label class="form-label">الأدوية الموصوفة</label>
+                    <textarea class="form-control" id="prescribedMedications"
+                        rows="2">{{ medical_case.prescribed_medications or '' }}</textarea>
+                </div>
+                <div class="col-md-6 mb-3">
+                    <label class="form-label">التحاليل والنتائج</label>
+                    <textarea class="form-control" id="labTestsResults"
+                        rows="2">{{ medical_case.lab_tests_and_results or '' }}</textarea>
+                </div>
+            </div>
+
+            <div class="mb-3">
+                <label class="form-label">المراكز الصحية التي تم زيارتها</label>
+                <input type="text" class="form-control" id="visitedFacilities"
+                    value="{{ medical_case.visited_facilities or '' }}">
+            </div>
+
+            <div class="mb-3">
+                <label class="form-label">ملاحظات إضافية</label>
+                <textarea class="form-control" id="additionalNotes"
+                    rows="2">{{ medical_case.additional_notes or '' }}</textarea>
+            </div>
+
+            <div class="mt-4">
+                <button type="submit" class="btn btn-primary">
+                    <i class="fas fa-save"></i> حفظ التعديلات
+                </button>
+                <a href="{{ url_for('medical_cases.view_medical_case_page', case_id=medical_case.id) }}"
+                    class="btn btn-secondary">
+                    <i class="fas fa-times"></i> إلغاء
+                </a>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+    document.getElementById('editMedicalCaseForm').addEventListener('submit', function (e) {
+        e.preventDefault();
+
+        const caseId = document.getElementById('caseId').value;
+
+        const caseData = {
+            case_date: document.getElementById('caseDate').value,
+            doctor_id: document.getElementById('doctorId').value,
+            case_description: document.getElementById('caseDescription').value,
+            treatment_details: document.getElementById('treatmentDetails').value,
+            prescribed_medications: document.getElementById('prescribedMedications').value,
+            lab_tests_and_results: document.getElementById('labTestsResults').value,
+            visited_facilities: document.getElementById('visitedFacilities').value,
+            additional_notes: document.getElementById('additionalNotes').value
+        };
+
+        fetch(`/api/medical-cases/${caseId}`, {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(caseData)
+        })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    alert(data.message);
+                    window.location.href = `/medical-cases/${caseId}`;
+                } else {
+                    alert('خطأ: ' + data.message);
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('حدث خطأ في الاتصال بالخادم');
+            });
+    });
+</script>
+{% endblock %}

@@ -1,0 +1,190 @@
+{% extends "layouts/dashboard_base.html" %}
+
+{% block title %}معاينة حالة مرضية{% endblock %}
+
+{% block content %}
+<!-- رأس الصفحة -->
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h4 class="mb-1">
+            <i class="fas fa-stethoscope me-2"></i>معاينة حالة مرضية
+        </h4>
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item"><a href="/medical-cases">الحالات المرضية</a></li>
+                <li class="breadcrumb-item active">معاينة الحالة</li>
+            </ol>
+        </nav>
+    </div>
+    <div>
+        <a href="{{ url_for('medical_cases.medical_cases_page') }}" class="btn btn-secondary">
+            <i class="fas fa-arrow-right"></i> رجوع
+        </a>
+        <a href="{{ url_for('medical_cases.edit_medical_case_page', case_id=medical_case.id) }}"
+            class="btn btn-primary">
+            <i class="fas fa-edit"></i> تعديل
+        </a>
+    </div>
+</div>
+
+<div class="row">
+    <!-- معلومات الحالة -->
+    <div class="col-md-8">
+        <div class="card shadow mb-4">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0">تفاصيل الحالة المرضية</h5>
+            </div>
+            <div class="card-body">
+                <div class="row mb-4">
+                    <div class="col-md-6">
+                        <h6><i class="fas fa-calendar-alt text-primary me-2"></i>تاريخ الحالة</h6>
+                        <p class="fs-5">{{ medical_case.case_date.strftime('%Y-%m-%d') if medical_case.case_date else
+                            '-' }}</p>
+                    </div>
+                    <div class="col-md-6">
+                        <h6><i class="fas fa-user-md text-success me-2"></i>الطبيب المعالج</h6>
+                        <p class="fs-5">{{ doctor.full_name if doctor else 'غير معروف' }}</p>
+                    </div>
+                </div>
+
+                <div class="mb-4">
+                    <h6><i class="fas fa-file-medical text-warning me-2"></i>وصف الحالة</h6>
+                    <div class="p-3 bg-light rounded">
+                        {{ medical_case.case_description or 'لا يوجد وصف' }}
+                    </div>
+                </div>
+
+                {% if medical_case.treatment_details %}
+                <div class="mb-4">
+                    <h6><i class="fas fa-heartbeat text-danger me-2"></i>تفاصيل العلاج</h6>
+                    <div class="p-3 bg-light rounded">
+                        {{ medical_case.treatment_details }}
+                    </div>
+                </div>
+                {% endif %}
+
+                {% if medical_case.prescribed_medications %}
+                <div class="mb-4">
+                    <h6><i class="fas fa-pills text-info me-2"></i>الأدوية الموصوفة</h6>
+                    <div class="p-3 bg-light rounded">
+                        {{ medical_case.prescribed_medications }}
+                    </div>
+                </div>
+                {% endif %}
+
+                {% if medical_case.lab_tests_and_results %}
+                <div class="mb-4">
+                    <h6><i class="fas fa-flask text-success me-2"></i>التحاليل والنتائج</h6>
+                    <div class="p-3 bg-light rounded">
+                        {{ medical_case.lab_tests_and_results }}
+                    </div>
+                </div>
+                {% endif %}
+
+                {% if medical_case.visited_facilities %}
+                <div class="mb-4">
+                    <h6><i class="fas fa-hospital text-warning me-2"></i>المراكز الصحية المزوررة</h6>
+                    <div class="p-3 bg-light rounded">
+                        {{ medical_case.visited_facilities }}
+                    </div>
+                </div>
+                {% endif %}
+
+                {% if medical_case.additional_notes %}
+                <div class="mb-4">
+                    <h6><i class="fas fa-sticky-note text-secondary me-2"></i>ملاحظات إضافية</h6>
+                    <div class="p-3 bg-light rounded">
+                        {{ medical_case.additional_notes }}
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- معلومات المريض -->
+    <div class="col-md-4">
+        <div class="card shadow mb-4">
+            <div class="card-header bg-info text-white">
+                <h5 class="mb-0"><i class="fas fa-user me-2"></i>معلومات المريض</h5>
+            </div>
+            <div class="card-body">
+                {% if patient %}
+                <div class="text-center mb-3">
+                    <div class="avatar-circle mb-3">
+                        {{ patient.first_name[0] if patient.first_name else '?' }}
+                    </div>
+                    <h5>{{ patient.full_name() }}</h5>
+                    <a href="{{ url_for('patients.view_patient_page', patient_id=patient.id) }}"
+                        class="btn btn-sm btn-outline-primary">
+                        <i class="fas fa-external-link-alt"></i> عرض الملف
+                    </a>
+                </div>
+
+                <ul class="list-group list-group-flush">
+                    <li class="list-group-item d-flex justify-content-between">
+                        <span><i class="fas fa-phone text-primary me-2"></i>رقم الهاتف</span>
+                        <strong>{{ patient.phone_number or 'غير محدد' }}</strong>
+                    </li>
+                    <li class="list-group-item d-flex justify-content-between">
+                        <span><i class="fas fa-birthday-cake text-success me-2"></i>تاريخ الميلاد</span>
+                        <strong>{{ patient.birth_date.strftime('%Y-%m-%d') if patient.birth_date else 'غير محدد'
+                            }}</strong>
+                    </li>
+                    <li class="list-group-item d-flex justify-content-between">
+                        <span><i class="fas fa-venus-mars text-warning me-2"></i>الجنس</span>
+                        <strong>{{ patient.gender or 'غير محدد' }}</strong>
+                    </li>
+                </ul>
+                {% else %}
+                <div class="text-center py-3">
+                    <i class="fas fa-user-slash fa-2x text-muted mb-2"></i>
+                    <p class="text-muted">لا توجد معلومات عن المريض</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- معلومات إضافية -->
+        <div class="card shadow">
+            <div class="card-header bg-secondary text-white">
+                <h5 class="mb-0"><i class="fas fa-info-circle me-2"></i>معلومات إضافية</h5>
+            </div>
+            <div class="card-body">
+                <ul class="list-group list-group-flush">
+                    <li class="list-group-item d-flex justify-content-between">
+                        <span><i class="fas fa-calendar-plus text-primary me-2"></i>تاريخ الإنشاء</span>
+                        <strong>{{ medical_case.created_at.strftime('%Y-%m-%d %H:%M') if medical_case.created_at else
+                            '-' }}</strong>
+                    </li>
+                    <li class="list-group-item d-flex justify-content-between">
+                        <span><i class="fas fa-id-card text-success me-2"></i>رقم الحالة</span>
+                        <strong>#{{ medical_case.id }}</strong>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .avatar-circle {
+        width: 80px;
+        height: 80px;
+        background: #0d6efd;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin: 0 auto;
+        font-size: 30px;
+        color: white;
+        font-weight: bold;
+    }
+
+    .list-group-item {
+        border: none;
+        padding: 0.75rem 0;
+    }
+</style>
+{% endblock %}

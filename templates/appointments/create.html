@@ -1,0 +1,105 @@
+{% extends "layouts/dashboard_base.html" %}
+
+{% block title %}إضافة موعد جديد{% endblock %}
+{% block page_title %}إضافة موعد جديد{% endblock %}
+{% block current_page %}المواعيد{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-lg-8 mx-auto">
+        <div class="card">
+            <div class="card-header bg-white">
+                <h5 class="mb-0">إضافة موعد جديد</h5>
+            </div>
+            <div class="card-body">
+                <form method="POST" action="{{ url_for('appointments.create_appointment') }}">
+                    <div class="row g-3">
+                        <!-- المريض -->
+                        <div class="col-md-6">
+                            <label class="form-label">المريض *</label>
+                            <select class="form-select" name="patient_id" required>
+                                <option value="">اختر المريض</option>
+                                {% for patient in patients %}
+                                <option value="{{ patient.id }}">
+                                    {{ patient.first_name }} {{ patient.last_name }} - {{ patient.phone }}
+                                </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+
+                        <!-- الطبيب -->
+                        <div class="col-md-6">
+                            <label class="form-label">الطبيب *</label>
+                            {% if current_user.role == 'DOCTOR' %}
+                            <input type="text" class="form-control" value="{{ current_user.full_name }}" readonly>
+                            <input type="hidden" name="doctor_id" value="{{ current_user.id }}">
+                            {% else %}
+                            <select class="form-select" name="doctor_id" required>
+                                <option value="">اختر الطبيب</option>
+                                {% for doctor in doctors %}
+                                <option value="{{ doctor.id }}">{{ doctor.full_name }}</option>
+                                {% endfor %}
+                            </select>
+                            {% endif %}
+                        </div>
+
+                        <!-- التاريخ -->
+                        <div class="col-md-6">
+                            <label class="form-label">التاريخ *</label>
+                            <input type="date" class="form-control" name="appointment_date" value="{{ next_week }}"
+                                min="{{ today }}" required>
+                        </div>
+
+                        <!-- الوقت -->
+                        <div class="col-md-6">
+                            <label class="form-label">الوقت *</label>
+                            <input type="time" class="form-control" name="appointment_time" value="09:00" required>
+                        </div>
+
+                        <!-- نوع الموعد -->
+                        <div class="col-md-6">
+                            <label class="form-label">نوع الموعد</label>
+                            <select class="form-select" name="appointment_type">
+                                <option value="عام">عام</option>
+                                <option value="متابعة">متابعة</option>
+                                <option value="كشف جديد">كشف جديد</option>
+                                <option value="تحاليل">تحاليل</option>
+                                <option value="أشعة">أشعة</option>
+                                <option value="طوارئ">طوارئ</option>
+                            </select>
+                        </div>
+
+                        <!-- المدة -->
+                        <div class="col-md-6">
+                            <label class="form-label">المدة (دقيقة)</label>
+                            <select class="form-select" name="duration">
+                                <option value="15">15 دقيقة</option>
+                                <option value="30" selected>30 دقيقة</option>
+                                <option value="45">45 دقيقة</option>
+                                <option value="60">60 دقيقة</option>
+                                <option value="90">90 دقيقة</option>
+                            </select>
+                        </div>
+
+                        <!-- ملاحظات -->
+                        <div class="col-12">
+                            <label class="form-label">ملاحظات</label>
+                            <textarea class="form-control" name="notes" rows="3"
+                                placeholder="أي ملاحظات إضافية..."></textarea>
+                        </div>
+                    </div>
+
+                    <div class="mt-4">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-save me-2"></i>حفظ الموعد
+                        </button>
+                        <a href="{{ url_for('appointments.appointments_list') }}" class="btn btn-secondary">
+                            <i class="fas fa-times me-2"></i>إلغاء
+                        </a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

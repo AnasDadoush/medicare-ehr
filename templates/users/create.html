@@ -1,0 +1,119 @@
+{% extends "layouts/dashboard_base.html" %}
+
+{% block title %}إضافة مستخدم جديد{% endblock %}
+
+{% block content %}
+<div class="card shadow">
+    <div class="card-header bg-primary text-white">
+        <h5 class="mb-0">إضافة مستخدم جديد</h5>
+    </div>
+    <div class="card-body">
+        <form id="createUserForm">
+            <div class="row">
+                <div class="col-md-6 mb-3">
+                    <label class="form-label">الاسم الكامل *</label>
+                    <input type="text" class="form-control" id="fullName" required>
+                </div>
+
+                <div class="col-md-6 mb-3">
+                    <label class="form-label">اسم المستخدم *</label>
+                    <input type="text" class="form-control" id="username" required>
+                    <small class="form-text text-muted">يستخدم لتسجيل الدخول</small>
+                </div>
+            </div>
+
+            <div class="row">
+                <div class="col-md-6 mb-3">
+                    <label class="form-label">كلمة المرور *</label>
+                    <input type="password" class="form-control" id="password" required>
+                </div>
+
+                <div class="col-md-6 mb-3">
+                    <label class="form-label">تأكيد كلمة المرور *</label>
+                    <input type="password" class="form-control" id="confirmPassword" required>
+                </div>
+            </div>
+
+            <div class="row">
+                <div class="col-md-6 mb-3">
+                    <label class="form-label">الدور *</label>
+                    <select class="form-select" id="role" required>
+                        <option value="">اختر الدور</option>
+                        <option value="ADMIN">مدير</option>
+                        <option value="DOCTOR">طبيب</option>
+                        <option value="ASSISTANT">مساعد</option>
+                    </select>
+                </div>
+
+                <div class="col-md-6 mb-3">
+                    <label class="form-label">حالة الحساب</label>
+                    <div class="form-check mt-2">
+                        <input class="form-check-input" type="checkbox" id="isActive" checked>
+                        <label class="form-check-label" for="isActive">الحساب نشط</label>
+                    </div>
+                </div>
+            </div>
+
+            <div class="mt-4">
+                <button type="submit" class="btn btn-primary">
+                    <i class="fas fa-save"></i> حفظ
+                </button>
+                <a href="{{ url_for('users.users_page') }}" class="btn btn-secondary">
+                    <i class="fas fa-times"></i> إلغاء
+                </a>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+    document.getElementById('createUserForm').addEventListener('submit', function (e) {
+        e.preventDefault();
+
+        // التحقق من تطابق كلمتي المرور
+        const password = document.getElementById('password').value;
+        const confirmPassword = document.getElementById('confirmPassword').value;
+
+        if (password !== confirmPassword) {
+            alert('كلمتا المرور غير متطابقتين');
+            return;
+        }
+
+        if (password.length < 6) {
+            alert('كلمة المرور يجب أن تكون 6 أحرف على الأقل');
+            return;
+        }
+
+        // جمع البيانات
+        const userData = {
+            full_name: document.getElementById('fullName').value,
+            username: document.getElementById('username').value,
+            password: password,
+            role: document.getElementById('role').value,
+            is_active: document.getElementById('isActive').checked
+        };
+
+        // إرسال الطلب
+        fetch('/api/users', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(userData)
+        })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    alert(data.message);
+                    window.location.href = '/users';
+                } else {
+                    alert('خطأ: ' + data.message);
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('حدث خطأ في الاتصال بالخادم');
+            });
+    });
+</script>
+{% endblock %}

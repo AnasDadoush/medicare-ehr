@@ -1,0 +1,104 @@
+{% extends "layouts/dashboard_base.html" %}
+
+{% block title %}تعديل مريض - {{ patient.full_name() }}{% endblock %}
+
+{% block content %}
+<div class="card shadow">
+    <div class="card-header bg-warning text-white">
+        <h5 class="mb-0">تعديل بيانات المريض: {{ patient.full_name() }}</h5>
+    </div>
+    <div class="card-body">
+        <form id="editPatientForm">
+            <input type="hidden" id="patientId" value="{{ patient.id }}">
+
+            <div class="row">
+                <div class="col-md-4 mb-3">
+                    <label class="form-label">الاسم الأول *</label>
+                    <input type="text" class="form-control" id="firstName" value="{{ patient.first_name }}" required>
+                </div>
+
+                <div class="col-md-4 mb-3">
+                    <label class="form-label">الاسم الأوسط</label>
+                    <input type="text" class="form-control" id="middleName" value="{{ patient.middle_name or '' }}">
+                </div>
+
+                <div class="col-md-4 mb-3">
+                    <label class="form-label">الاسم الأخير *</label>
+                    <input type="text" class="form-control" id="lastName" value="{{ patient.last_name }}" required>
+                </div>
+            </div>
+
+            <div class="row">
+                <div class="col-md-6 mb-3">
+                    <label class="form-label">الجنس</label>
+                    <select class="form-select" id="gender">
+                        <option value="">اختر الجنس</option>
+                        <option value="ذكر" {% if patient.gender=='ذكر' %}selected{% endif %}>ذكر</option>
+                        <option value="أنثى" {% if patient.gender=='أنثى' %}selected{% endif %}>أنثى</option>
+                    </select>
+                </div>
+
+                <div class="col-md-6 mb-3">
+                    <label class="form-label">تاريخ الميلاد</label>
+                    <input type="date" class="form-control" id="birthDate"
+                        value="{{ patient.birth_date.strftime('%Y-%m-%d') if patient.birth_date else '' }}">
+                </div>
+            </div>
+
+            <div class="row">
+                <div class="col-md-6 mb-3">
+                    <label class="form-label">رقم الهاتف</label>
+                    <input type="tel" class="form-control" id="phoneNumber" value="{{ patient.phone_number or '' }}">
+                </div>
+            </div>
+
+            <div class="mt-4">
+                <button type="submit" class="btn btn-primary">
+                    <i class="fas fa-save"></i> حفظ التعديلات
+                </button>
+                <a href="{{ url_for('patients.view_patient_page', patient_id=patient.id) }}" class="btn btn-secondary">
+                    <i class="fas fa-times"></i> إلغاء
+                </a>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+    document.getElementById('editPatientForm').addEventListener('submit', function (e) {
+        e.preventDefault();
+
+        const patientId = document.getElementById('patientId').value;
+
+        const patientData = {
+            first_name: document.getElementById('firstName').value,
+            middle_name: document.getElementById('middleName').value,
+            last_name: document.getElementById('lastName').value,
+            gender: document.getElementById('gender').value,
+            birth_date: document.getElementById('birthDate').value,
+            phone_number: document.getElementById('phoneNumber').value
+        };
+
+        fetch(`/api/patients/${patientId}`, {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(patientData)
+        })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    alert(data.message);
+                    window.location.href = '/patients/' + patientId;
+                } else {
+                    alert('خطأ: ' + data.message);
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('حدث خطأ في الاتصال بالخادم');
+            });
+    });
+</script>
+{% endblock %}

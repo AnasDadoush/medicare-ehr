@@ -1,0 +1,279 @@
+{% extends "layouts/dashboard_base.html" %}
+
+{% block title %}إدارة المواعيد{% endblock %}
+{% block page_title %}إدارة المواعيد{% endblock %}
+{% block current_page %}المواعيد{% endblock %}
+
+{% block extra_css %}
+<style>
+    .appointment-card {
+        border-radius: 10px;
+        border: 1px solid #dee2e6;
+        margin-bottom: 15px;
+        transition: all 0.3s;
+    }
+
+    .appointment-card:hover {
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+        transform: translateY(-2px);
+    }
+
+    .appointment-date {
+        background: linear-gradient(135deg, #667eea, #764ba2);
+        color: white;
+        padding: 10px;
+        border-radius: 10px 0 0 10px;
+        text-align: center;
+        min-width: 100px;
+    }
+
+    .appointment-day {
+        font-size: 1.5rem;
+        font-weight: bold;
+        line-height: 1;
+    }
+
+    .appointment-month {
+        font-size: 0.9rem;
+        opacity: 0.9;
+    }
+
+    .appointment-time {
+        font-size: 0.9rem;
+        background: rgba(102, 126, 234, 0.1);
+        color: #667eea;
+        padding: 3px 10px;
+        border-radius: 15px;
+        display: inline-block;
+        margin-top: 5px;
+    }
+
+    .appointment-status {
+        padding: 3px 10px;
+        border-radius: 15px;
+        font-size: 0.85rem;
+        font-weight: bold;
+    }
+
+    .status-scheduled {
+        background: #cfe2ff;
+        color: #084298;
+    }
+
+    .status-attended {
+        background: #d1e7dd;
+        color: #0f5132;
+    }
+
+    .status-cancelled {
+        background: #f8d7da;
+        color: #842029;
+    }
+
+    .status-no-show {
+        background: #fff3cd;
+        color: #664d03;
+    }
+
+    .appointment-actions {
+        min-width: 150px;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-md-8">
+        <div class="d-flex justify-content-between align-items-center">
+            <h5 class="mb-0">قائمة المواعيد</h5>
+            <a href="{{ url_for('appointments.create_appointment') }}" class="btn btn-primary">
+                <i class="fas fa-plus me-2"></i>موعد جديد
+            </a>
+        </div>
+    </div>
+    <div class="col-md-4 text-start">
+        <a href="{{ url_for('appointments.appointments_calendar') }}" class="btn btn-outline-info">
+            <i class="fas fa-calendar-alt me-2"></i>عرض التقويم
+        </a>
+    </div>
+</div>
+
+<!-- فلترة المواعيد -->
+<div class="card mb-4">
+    <div class="card-body">
+        <div class="row g-3">
+            <div class="col-md-3">
+                <label class="form-label">التاريخ من</label>
+                <input type="date" class="form-control" id="filterStartDate">
+            </div>
+            <div class="col-md-3">
+                <label class="form-label">التاريخ إلى</label>
+                <input type="date" class="form-control" id="filterEndDate">
+            </div>
+            <div class="col-md-3">
+                <label class="form-label">الحالة</label>
+                <select class="form-select" id="filterStatus">
+                    <option value="">جميع الحالات</option>
+                    <option value="مجدول">مجدول</option>
+                    <option value="تم الحضور">تم الحضور</option>
+                    <option value="ملغي">ملغي</option>
+                    <option value="لم يحضر">لم يحضر</option>
+                </select>
+            </div>
+            <div class="col-md-3">
+                <label class="form-label">&nbsp;</label>
+                <button class="btn btn-outline-secondary w-100" onclick="filterAppointments()">
+                    <i class="fas fa-filter me-2"></i>تصفية
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- قائمة المواعيد -->
+<div class="card">
+    <div class="card-body">
+        {% if appointments %}
+        <div class="table-responsive">
+            <table class="table table-hover" id="appointmentsTable">
+                <thead>
+                    <tr>
+                        <th>التاريخ والوقت</th>
+                        <th>المريض</th>
+                        <th>الطبيب</th>
+                        <th>النوع</th>
+                        <th>المدة</th>
+                        <th>الحالة</th>
+                        <th>الإجراءات</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for appointment in appointments %}
+                    <tr data-appointment-id="{{ appointment.id }}" data-date="{{ appointment.appointment_date }}"
+                        data-status="{{ appointment.status }}">
+                        <td>
+                            <div class="d-flex align-items-center">
+                                <div class="me-3">
+                                    <div class="text-primary fw-bold">
+                                        {{ appointment.appointment_date.strftime('%Y-%m-%d') if
+                                        appointment.appointment_date }}
+                                    </div>
+                                    <small class="text-muted">
+                                        {{ appointment.appointment_time.strftime('%H:%M') if
+                                        appointment.appointment_time }}
+                                    </small>
+                                </div>
+                            </div>
+                        </td>
+                        <td>
+                            <strong>{{ appointment.patient.first_name }} {{ appointment.patient.last_name }}</strong>
+                            <div class="text-muted small">{{ appointment.patient.phone }}</div>
+                        </td>
+                        <td>
+                            {{ appointment.doctor.full_name if appointment.doctor else 'غير محدد' }}
+                        </td>
+                        <td>
+                            <span class="badge bg-info">{{ appointment.appointment_type }}</span>
+                        </td>
+                        <td>{{ appointment.duration_minutes }} دقيقة</td>
+                        <td>
+                            <span class="appointment-status status-{{ appointment.status.replace(' ', '-')|lower }}">
+                                {{ appointment.status }}
+                            </span>
+                        </td>
+                        <td>
+                            <div class="btn-group btn-group-sm">
+                                <button type="button" class="btn btn-outline-primary dropdown-toggle"
+                                    data-bs-toggle="dropdown">
+                                    <i class="fas fa-cog"></i>
+                                </button>
+                                <ul class="dropdown-menu" dir="rtl">
+                                    <li>
+                                        <a class="dropdown-item"
+                                            href="{{ url_for('appointments.edit_appointment', appointment_id=appointment.id) }}">
+                                            <i class="fas fa-edit me-2"></i>تعديل
+                                        </a>
+                                    </li>
+                                    <li>
+                                        <form method="POST"
+                                            action="{{ url_for('appointments.update_appointment_status', appointment_id=appointment.id) }}"
+                                            class="d-inline">
+                                            <button type="submit" name="status" value="تم الحضور" class="dropdown-item">
+                                                <i class="fas fa-check me-2"></i>تم الحضور
+                                            </button>
+                                        </form>
+                                    </li>
+                                    <li>
+                                        <form method="POST"
+                                            action="{{ url_for('appointments.update_appointment_status', appointment_id=appointment.id) }}"
+                                            class="d-inline">
+                                            <button type="submit" name="status" value="ملغي" class="dropdown-item">
+                                                <i class="fas fa-times me-2"></i>إلغاء
+                                            </button>
+                                        </form>
+                                    </li>
+                                    <li>
+                                        <hr class="dropdown-divider">
+                                    </li>
+                                    <li>
+                                        <form method="POST"
+                                            action="{{ url_for('appointments.delete_appointment', appointment_id=appointment.id) }}"
+                                            onsubmit="return confirm('هل أنت متأكد من حذف هذا الموعد؟')"
+                                            class="d-inline">
+                                            <button type="submit" class="dropdown-item text-danger">
+                                                <i class="fas fa-trash me-2"></i>حذف
+                                            </button>
+                                        </form>
+                                    </li>
+                                </ul>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div class="text-center py-5">
+            <i class="fas fa-calendar-alt fa-3x text-muted mb-3"></i>
+            <p class="text-muted">لا توجد مواعيد مسجلة</p>
+            <a href="{{ url_for('appointments.create_appointment') }}" class="btn btn-primary">
+                <i class="fas fa-plus me-2"></i>إضافة أول موعد
+            </a>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    function filterAppointments() {
+        const startDate = document.getElementById('filterStartDate').value;
+        const endDate = document.getElementById('filterEndDate').value;
+        const status = document.getElementById('filterStatus').value;
+
+        const rows = document.querySelectorAll('#appointmentsTable tbody tr');
+
+        rows.forEach(row => {
+            let showRow = true;
+            const rowDate = row.getAttribute('data-date');
+            const rowStatus = row.getAttribute('data-status');
+
+            if (startDate && rowDate < startDate) {
+                showRow = false;
+            }
+
+            if (endDate && rowDate > endDate) {
+                showRow = false;
+            }
+
+            if (status && rowStatus !== status) {
+                showRow = false;
+            }
+
+            row.style.display = showRow ? '' : 'none';
+        });
+    }
+</script>
+{% endblock %}

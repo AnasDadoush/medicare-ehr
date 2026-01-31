@@ -1,0 +1,428 @@
+{% extends "layouts/dashboard_base.html" %}
+
+{% block title %}تعديل موعد{% endblock %}
+{% block page_title %}تعديل موعد{% endblock %}
+{% block current_page %}المواعيد{% endblock %}
+
+{% block extra_css %}
+<style>
+    .appointment-status-badge {
+        padding: 5px 12px;
+        border-radius: 20px;
+        font-size: 0.85rem;
+        font-weight: bold;
+    }
+
+    .status-scheduled {
+        background: #cfe2ff;
+        color: #084298;
+    }
+
+    .status-attended {
+        background: #d1e7dd;
+        color: #0f5132;
+    }
+
+    .status-cancelled {
+        background: #f8d7da;
+        color: #842029;
+    }
+
+    .status-no-show {
+        background: #fff3cd;
+        color: #664d03;
+    }
+
+    .appointment-header {
+        background: #f8f9fa;
+        border-radius: 10px;
+        padding: 20px;
+        margin-bottom: 25px;
+        border-right: 4px solid #0d6efd;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-lg-8 mx-auto">
+        <!-- معلومات الموعد الحالية -->
+        <div class="appointment-header">
+            <div class="row align-items-center">
+                <div class="col-md-8">
+                    <h5 class="mb-2">تعديل الموعد #{{ appointment.id }}</h5>
+                    <div class="d-flex flex-wrap gap-2 mb-2">
+                        <span class="appointment-status-badge status-{{ appointment.status.replace(' ', '-')|lower }}">
+                            {{ appointment.status }}
+                        </span>
+                        <span class="badge bg-info">{{ appointment.appointment_type }}</span>
+                        <span class="badge bg-secondary">{{ appointment.duration_minutes }} دقيقة</span>
+                    </div>
+                    <p class="mb-1">
+                        <i class="fas fa-user-injured me-2"></i>
+                        <strong>المريض:</strong> {{ appointment.patient.first_name }} {{ appointment.patient.last_name
+                        }}
+                    </p>
+                    <p class="mb-1">
+                        <i class="fas fa-user-md me-2"></i>
+                        <strong>الطبيب:</strong> {{ appointment.doctor.full_name }}
+                    </p>
+                    <p class="mb-0">
+                        <i class="fas fa-clock me-2"></i>
+                        <strong>التاريخ والوقت:</strong>
+                        {{ appointment.appointment_date.strftime('%Y-%m-%d') }}
+                        الساعة {{ appointment.appointment_time.strftime('%H:%M') }}
+                    </p>
+                </div>
+                <div class="col-md-4 text-start">
+                    <div class="text-muted small">
+                        <i class="fas fa-calendar-plus me-1"></i>
+                        أنشئ في: {{ appointment.created_at.strftime('%Y-%m-%d %H:%M') if appointment.created_at }}
+                    </div>
+                    {% if appointment.updated_at and appointment.updated_at != appointment.created_at %}
+                    <div class="text-muted small mt-1">
+                        <i class="fas fa-edit me-1"></i>
+                        آخر تحديث: {{ appointment.updated_at.strftime('%Y-%m-%d %H:%M') }}
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- نموذج تعديل الموعد -->
+        <div class="card">
+            <div class="card-header bg-white">
+                <h5 class="mb-0">تفاصيل الموعد</h5>
+            </div>
+            <div class="card-body">
+                <form method="POST"
+                    action="{{ url_for('appointments.edit_appointment', appointment_id=appointment.id) }}">
+                    <div class="row g-3">
+                        <!-- المريض -->
+                        <div class="col-md-6">
+                            <label class="form-label">المريض *</label>
+                            <select class="form-select" name="patient_id" required>
+                                <option value="">اختر المريض</option>
+                                {% for patient in patients %}
+                                <option value="{{ patient.id }}" {% if appointment.patient_id==patient.id %}selected{%
+                                    endif %}>
+                                    {{ patient.first_name }} {{ patient.last_name }} - {{ patient.phone }}
+                                </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+
+                        <!-- الطبيب -->
+                        <div class="col-md-6">
+                            <label class="form-label">الطبيب *</label>
+                            <select class="form-select" name="doctor_id" required>
+                                <option value="">اختر الطبيب</option>
+                                {% for doctor in doctors %}
+                                <option value="{{ doctor.id }}" {% if appointment.doctor_id==doctor.id %}selected{%
+                                    endif %}>
+                                    {{ doctor.full_name }}
+                                </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+
+                        <!-- التاريخ -->
+                        <div class="col-md-6">
+                            <label class="form-label">التاريخ *</label>
+                            <input type="date" class="form-control" name="appointment_date"
+                                value="{{ appointment.appointment_date.strftime('%Y-%m-%d') if appointment.appointment_date }}"
+                                required>
+                        </div>
+
+                        <!-- الوقت -->
+                        <div class="col-md-6">
+                            <label class="form-label">الوقت *</label>
+                            <input type="time" class="form-control" name="appointment_time"
+                                value="{{ appointment.appointment_time.strftime('%H:%M') if appointment.appointment_time }}"
+                                required>
+                        </div>
+
+                        <!-- نوع الموعد -->
+                        <div class="col-md-6">
+                            <label class="form-label">نوع الموعد</label>
+                            <select class="form-select" name="appointment_type">
+                                <option value="عام" {% if appointment.appointment_type=='عام' %}selected{% endif %}>عام
+                                </option>
+                                <option value="متابعة" {% if appointment.appointment_type=='متابعة' %}selected{% endif
+                                    %}>متابعة</option>
+                                <option value="كشف جديد" {% if appointment.appointment_type=='كشف جديد' %}selected{%
+                                    endif %}>كشف جديد</option>
+                                <option value="تحاليل" {% if appointment.appointment_type=='تحاليل' %}selected{% endif
+                                    %}>تحاليل</option>
+                                <option value="أشعة" {% if appointment.appointment_type=='أشعة' %}selected{% endif %}>
+                                    أشعة</option>
+                                <option value="طوارئ" {% if appointment.appointment_type=='طوارئ' %}selected{% endif %}>
+                                    طوارئ</option>
+                            </select>
+                        </div>
+
+                        <!-- المدة -->
+                        <div class="col-md-6">
+                            <label class="form-label">المدة (دقيقة)</label>
+                            <select class="form-select" name="duration">
+                                <option value="15" {% if appointment.duration_minutes==15 %}selected{% endif %}>15 دقيقة
+                                </option>
+                                <option value="30" {% if appointment.duration_minutes==30 %}selected{% endif %}>30 دقيقة
+                                </option>
+                                <option value="45" {% if appointment.duration_minutes==45 %}selected{% endif %}>45 دقيقة
+                                </option>
+                                <option value="60" {% if appointment.duration_minutes==60 %}selected{% endif %}>60 دقيقة
+                                </option>
+                                <option value="90" {% if appointment.duration_minutes==90 %}selected{% endif %}>90 دقيقة
+                                </option>
+                            </select>
+                        </div>
+
+                        <!-- حالة الموعد -->
+                        <div class="col-md-6">
+                            <label class="form-label">حالة الموعد</label>
+                            <select class="form-select" name="status">
+                                <option value="مجدول" {% if appointment.status=='مجدول' %}selected{% endif %}>مجدول
+                                </option>
+                                <option value="تم الحضور" {% if appointment.status=='تم الحضور' %}selected{% endif %}>تم
+                                    الحضور</option>
+                                <option value="ملغي" {% if appointment.status=='ملغي' %}selected{% endif %}>ملغي
+                                </option>
+                                <option value="لم يحضر" {% if appointment.status=='لم يحضر' %}selected{% endif %}>لم
+                                    يحضر</option>
+                            </select>
+                        </div>
+
+                        <!-- التاريخ والوقت الحالي -->
+                        <div class="col-md-6">
+                            <label class="form-label">الوقت الحالي</label>
+                            <div class="form-control" style="background-color: #f8f9fa;">
+                                <i class="fas fa-clock me-2"></i>
+                                <span id="currentDateTime"></span>
+                            </div>
+                        </div>
+
+                        <!-- ملاحظات -->
+                        <div class="col-12">
+                            <label class="form-label">ملاحظات</label>
+                            <textarea class="form-control" name="notes" rows="4"
+                                placeholder="أي ملاحظات إضافية...">{{ appointment.notes or '' }}</textarea>
+                            <div class="form-text">يمكنك إضافة ملاحظات إضافية حول الموعد، سبب التعديل، أو أي معلومات
+                                مهمة.</div>
+                        </div>
+                    </div>
+
+                    <!-- الأزرار -->
+                    <div class="mt-4">
+                        <div class="d-flex justify-content-between">
+                            <div>
+                                <button type="submit" class="btn btn-primary">
+                                    <i class="fas fa-save me-2"></i>حفظ التعديلات
+                                </button>
+                                <a href="{{ url_for('appointments.appointments_list') }}" class="btn btn-secondary">
+                                    <i class="fas fa-times me-2"></i>إلغاء
+                                </a>
+                            </div>
+
+                            <div>
+                                <!-- حذف الموعد -->
+                                <button type="button" class="btn btn-danger" data-bs-toggle="modal"
+                                    data-bs-target="#deleteModal">
+                                    <i class="fas fa-trash me-2"></i>حذف الموعد
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- معلومات إضافية -->
+        <div class="row mt-4">
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-header bg-white">
+                        <h6 class="mb-0">معلومات المريض</h6>
+                    </div>
+                    <div class="card-body">
+                        {% if appointment.patient %}
+                        <div class="d-flex align-items-start mb-3">
+                            <div class="flex-shrink-0">
+                                <div class="avatar-circle bg-primary text-white">
+                                    {{ appointment.patient.first_name[0] }}
+                                </div>
+                            </div>
+                            <div class="flex-grow-1 ms-3">
+                                <h6 class="mb-1">{{ appointment.patient.first_name }} {{ appointment.patient.last_name
+                                    }}</h6>
+                                <p class="mb-1">
+                                    <i class="fas fa-phone me-2"></i>{{ appointment.patient.phone }}
+                                </p>
+                                {% if appointment.patient.id_number %}
+                                <p class="mb-1">
+                                    <i class="fas fa-id-card me-2"></i>{{ appointment.patient.id_number }}
+                                </p>
+                                {% endif %}
+                                {% if appointment.patient.date_of_birth %}
+                                <p class="mb-0">
+                                    <i class="fas fa-birthday-cake me-2"></i>
+                                    {{ appointment.patient.date_of_birth.strftime('%Y-%m-%d') }}
+                                    ({{ ((now.date() - appointment.patient.date_of_birth).days // 365) }} سنة)
+                                </p>
+                                {% endif %}
+                            </div>
+                        </div>
+                        <a href="{{ url_for('patients.view_patient_page', patient_id=appointment.patient_id) }}"
+                            class="btn btn-outline-primary btn-sm w-100">
+                            <i class="fas fa-external-link-alt me-2"></i>عرض ملف المريض
+                        </a>
+                        {% else %}
+                        <p class="text-muted text-center">لا توجد معلومات عن المريض</p>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-header bg-white">
+                        <h6 class="mb-0">معلومات الطبيب</h6>
+                    </div>
+                    <div class="card-body">
+                        {% if appointment.doctor %}
+                        <div class="d-flex align-items-start mb-3">
+                            <div class="flex-shrink-0">
+                                <div class="avatar-circle bg-success text-white">
+                                    {{ appointment.doctor.full_name[0] if appointment.doctor.full_name else 'ط' }}
+                                </div>
+                            </div>
+                            <div class="flex-grow-1 ms-3">
+                                <h6 class="mb-1">{{ appointment.doctor.full_name }}</h6>
+                                <p class="mb-1">
+                                    <i class="fas fa-user-md me-2"></i>طبيب
+                                </p>
+                                {% if appointment.doctor.username %}
+                                <p class="mb-0">
+                                    <i class="fas fa-user me-2"></i>{{ appointment.doctor.username }}
+                                </p>
+                                {% endif %}
+                            </div>
+                        </div>
+                        <div class="small text-muted">
+                            <i class="fas fa-info-circle me-1"></i>
+                            سيتم إشعار الطبيب بالتعديلات على الموعد.
+                        </div>
+                        {% else %}
+                        <p class="text-muted text-center">لا توجد معلومات عن الطبيب</p>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal لحذف الموعد -->
+<div class="modal fade" id="deleteModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">تأكيد الحذف</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="alert alert-danger">
+                    <i class="fas fa-exclamation-triangle me-2"></i>
+                    <strong>تحذير:</strong> هذا الإجراء لا يمكن التراجع عنه!
+                </div>
+                <p>هل أنت متأكد من حذف هذا الموعد؟</p>
+                <div class="bg-light p-3 rounded">
+                    <p class="mb-1"><strong>المريض:</strong> {{ appointment.patient.first_name }} {{
+                        appointment.patient.last_name }}</p>
+                    <p class="mb-1"><strong>التاريخ:</strong> {{ appointment.appointment_date.strftime('%Y-%m-%d') }}
+                    </p>
+                    <p class="mb-1"><strong>الوقت:</strong> {{ appointment.appointment_time.strftime('%H:%M') }}</p>
+                    <p class="mb-0"><strong>النوع:</strong> {{ appointment.appointment_type }}</p>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">إلغاء</button>
+                <form method="POST"
+                    action="{{ url_for('appointments.delete_appointment', appointment_id=appointment.id) }}"
+                    class="d-inline">
+                    <button type="submit" class="btn btn-danger">
+                        <i class="fas fa-trash me-2"></i>نعم، احذف الموعد
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // عرض التاريخ والوقت الحالي
+    function updateDateTime() {
+        const now = new Date();
+        const options = {
+            weekday: 'long',
+            year: 'numeric',
+            month: 'long',
+            day: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit',
+            second: '2-digit',
+            hour12: false
+        };
+
+        // تنسيق التاريخ بالعربية
+        const formatter = new Intl.DateTimeFormat('ar-SA', options);
+        const formattedDate = formatter.format(now);
+
+        document.getElementById('currentDateTime').textContent = formattedDate;
+    }
+
+    // تحديث التاريخ والوقت كل ثانية
+    updateDateTime();
+    setInterval(updateDateTime, 1000);
+
+    // التحقق من صحة التاريخ (لا يمكن اختيار تاريخ في الماضي)
+    document.addEventListener('DOMContentLoaded', function () {
+        const dateInput = document.querySelector('input[name="appointment_date"]');
+        const today = new Date().toISOString().split('T')[0];
+
+        // تعيين الحد الأدنى للتاريخ لليوم الحالي
+        dateInput.min = today;
+
+        // التحقق عند تغيير التاريخ
+        dateInput.addEventListener('change', function () {
+            const selectedDate = this.value;
+            if (selectedDate < today) {
+                alert('لا يمكن اختيار تاريخ في الماضي!');
+                this.value = today;
+            }
+        });
+
+        // تأكيد الحذف
+        document.querySelector('form[action*="delete"]')?.addEventListener('submit', function (e) {
+            if (!confirm('هل أنت متأكد تماماً من حذف هذا الموعد؟ لا يمكن التراجع عن هذا الإجراء.')) {
+                e.preventDefault();
+            }
+        });
+    });
+</script>
+
+<style>
+    .avatar-circle {
+        width: 50px;
+        height: 50px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: bold;
+        font-size: 1.2rem;
+    }
+</style>
+{% endblock %}

@@ -1,0 +1,129 @@
+{% extends "layouts/dashboard_base.html" %}
+
+{% block title %}تعديل مستخدم{% endblock %}
+
+{% block content %}
+<div class="card shadow">
+    <div class="card-header bg-warning text-white">
+        <h5 class="mb-0">تعديل مستخدم: {{ user.full_name }}</h5>
+    </div>
+    <div class="card-body">
+        <form id="editUserForm">
+            <input type="hidden" id="userId" value="{{ user.id }}">
+
+            <div class="row">
+                <div class="col-md-6 mb-3">
+                    <label class="form-label">الاسم الكامل *</label>
+                    <input type="text" class="form-control" id="fullName" value="{{ user.full_name }}" required>
+                </div>
+
+                <div class="col-md-6 mb-3">
+                    <label class="form-label">اسم المستخدم *</label>
+                    <input type="text" class="form-control" id="username" value="{{ user.username }}" required>
+                </div>
+            </div>
+
+            <div class="row">
+                <div class="col-md-6 mb-3">
+                    <label class="form-label">كلمة المرور الجديدة (اختياري)</label>
+                    <input type="password" class="form-control" id="password">
+                    <small class="form-text text-muted">اتركه فارغاً للحفاظ على كلمة المرور الحالية</small>
+                </div>
+
+                <div class="col-md-6 mb-3">
+                    <label class="form-label">تأكيد كلمة المرور</label>
+                    <input type="password" class="form-control" id="confirmPassword">
+                </div>
+            </div>
+
+            <div class="row">
+                <div class="col-md-6 mb-3">
+                    <label class="form-label">الدور *</label>
+                    <select class="form-select" id="role" required>
+                        <option value="ADMIN" {% if user.role=='ADMIN' %}selected{% endif %}>مدير</option>
+                        <option value="DOCTOR" {% if user.role=='DOCTOR' %}selected{% endif %}>طبيب</option>
+                        <option value="ASSISTANT" {% if user.role=='ASSISTANT' %}selected{% endif %}>مساعد</option>
+                    </select>
+                </div>
+
+                <div class="col-md-6 mb-3">
+                    <label class="form-label">حالة الحساب</label>
+                    <div class="form-check mt-2">
+                        <input class="form-check-input" type="checkbox" id="isActive" {% if user.is_active %}checked{%
+                            endif %}>
+                        <label class="form-check-label" for="isActive">الحساب نشط</label>
+                    </div>
+                </div>
+            </div>
+
+            <div class="mt-4">
+                <button type="submit" class="btn btn-primary">
+                    <i class="fas fa-save"></i> حفظ التعديلات
+                </button>
+                <a href="{{ url_for('users.users_page') }}" class="btn btn-secondary">
+                    <i class="fas fa-times"></i> إلغاء
+                </a>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+    document.getElementById('editUserForm').addEventListener('submit', function (e) {
+        e.preventDefault();
+
+        const password = document.getElementById('password').value;
+        const confirmPassword = document.getElementById('confirmPassword').value;
+
+        // التحقق من تطابق كلمتي المرور إذا تم إدخالهما
+        if (password || confirmPassword) {
+            if (password !== confirmPassword) {
+                alert('كلمتا المرور غير متطابقتين');
+                return;
+            }
+
+            if (password.length < 6) {
+                alert('كلمة المرور يجب أن تكون 6 أحرف على الأقل');
+                return;
+            }
+        }
+
+        // جمع البيانات
+        const userData = {
+            full_name: document.getElementById('fullName').value,
+            username: document.getElementById('username').value,
+            role: document.getElementById('role').value,
+            is_active: document.getElementById('isActive').checked
+        };
+
+        // إضافة كلمة المرور فقط إذا تم إدخالها
+        if (password) {
+            userData.password = password;
+        }
+
+        const userId = document.getElementById('userId').value;
+
+        // إرسال الطلب
+        fetch(`/api/users/${userId}`, {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(userData)
+        })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    alert(data.message);
+                    window.location.href = '/users';
+                } else {
+                    alert('خطأ: ' + data.message);
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('حدث خطأ في الاتصال بالخادم');
+            });
+    });
+</script>
+{% endblock %}

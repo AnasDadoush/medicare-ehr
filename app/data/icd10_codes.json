@@ -1,0 +1,24 @@
+[
+  {
+    "code": "J06.9",
+    "description": "Acute upper respiratory infection, unspecified"
+  },
+  { "code": "I10", "description": "Essential (primary) hypertension" },
+  {
+    "code": "E11.9",
+    "description": "Type 2 diabetes mellitus without complications"
+  },
+  { "code": "M54.5", "description": "Low back pain" },
+  { "code": "J18.9", "description": "Pneumonia, unspecified organism" },
+  {
+    "code": "A09",
+    "description": "Infectious gastroenteritis and colitis, unspecified"
+  },
+  { "code": "J45.9", "description": "Asthma, unspecified" },
+  {
+    "code": "N39.0",
+    "description": "Urinary tract infection, site not specified"
+  },
+  { "code": "K29.7", "description": "Gastritis, unspecified" },
+  { "code": "H66.9", "description": "Otitis media, unspecified" }
+]

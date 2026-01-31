@@ -1,0 +1,161 @@
+{% extends "layouts/dashboard_base.html" %}
+
+{% block title %}تقويم المواعيد{% endblock %}
+{% block page_title %}تقويم المواعيد{% endblock %}
+{% block current_page %}المواعيد{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/fullcalendar@5.11.3/main.min.css">
+<style>
+    #calendar {
+        background: white;
+        padding: 20px;
+        border-radius: 10px;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+    }
+
+    .fc .fc-toolbar {
+        flex-wrap: wrap;
+    }
+
+    .fc .fc-toolbar-title {
+        font-size: 1.5rem;
+        color: #0d6efd;
+    }
+
+    .fc .fc-button {
+        background-color: #0d6efd;
+        border-color: #0d6efd;
+    }
+
+    .fc .fc-button:hover {
+        background-color: #0b5ed7;
+        border-color: #0b5ed7;
+    }
+
+    .fc-direction-rtl .fc-daygrid-event.fc-event-end {
+        margin-right: 2px;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-md-8">
+        <h5 class="mb-0">تقويم المواعيد</h5>
+        <p class="text-muted mb-0">عرض وتنظيم جميع المواعيد في شكل تقويم</p>
+    </div>
+    <div class="col-md-4 text-start">
+        <a href="{{ url_for('appointments.appointments_list') }}" class="btn btn-outline-primary">
+            <i class="fas fa-list me-2"></i>عرض القائمة
+        </a>
+        <a href="{{ url_for('appointments.create_appointment') }}" class="btn btn-primary">
+            <i class="fas fa-plus me-2"></i>موعد جديد
+        </a>
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-body">
+        <div id="calendar"></div>
+    </div>
+</div>
+
+<!-- Modal لعرض تفاصيل الموعد -->
+<div class="modal fade" id="appointmentModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">تفاصيل الموعد</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div id="appointmentDetails">
+                    <!-- سيتم ملء التفاصيل هنا -->
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">إغلاق</button>
+                <a href="#" id="editAppointmentBtn" class="btn btn-primary">
+                    <i class="fas fa-edit me-2"></i>تعديل
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/fullcalendar@5.11.3/main.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/fullcalendar@5.11.3/locales/ar-sa.js"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const calendarEl = document.getElementById('calendar');
+
+        // تحويل الأحداث من Jinja2 إلى JavaScript
+        const calendarEvents = JSON.parse('{{ calendar_events|safe }}');
+
+        const calendar = new FullCalendar.Calendar(calendarEl, {
+            locale: 'ar-sa',
+            direction: 'rtl',
+            initialView: 'dayGridMonth',
+            headerToolbar: {
+                right: 'today prev,next',
+                center: 'title',
+                left: 'dayGridMonth,timeGridWeek,timeGridDay'
+            },
+            events: calendarEvents,
+            eventClick: function (info) {
+                const event = info.event;
+
+                // عرض تفاصيل الموعد في Modal
+                const details = `
+                <div class="mb-3">
+                    <strong>المريض:</strong> ${event.extendedProps.patient}
+                </div>
+                <div class="mb-3">
+                    <strong>الطبيب:</strong> ${event.extendedProps.doctor}
+                </div>
+                <div class="mb-3">
+                    <strong>النوع:</strong> <span class="badge bg-info">${event.extendedProps.type}</span>
+                </div>
+                <div class="mb-3">
+                    <strong>الحالة:</strong> <span class="badge bg-${getStatusColor(event.extendedProps.status)}">${event.extendedProps.status}</span>
+                </div>
+                <div class="mb-3">
+                    <strong>الوقت:</strong> ${event.start.toLocaleString('ar-SA')}
+                </div>
+                ${event.extendedProps.notes ? `
+                <div class="mb-3">
+                    <strong>ملاحظات:</strong><br>
+                    ${event.extendedProps.notes}
+                </div>` : ''}
+            `;
+
+                document.getElementById('appointmentDetails').innerHTML = details;
+                document.getElementById('editAppointmentBtn').href = `/appointments/${event.id}/edit`;
+
+                const modal = new bootstrap.Modal(document.getElementById('appointmentModal'));
+                modal.show();
+            },
+            eventTimeFormat: {
+                hour: '2-digit',
+                minute: '2-digit',
+                meridiem: false
+            }
+        });
+
+        calendar.render();
+
+        function getStatusColor(status) {
+            const colors = {
+                'مجدول': 'primary',
+                'تم الحضور': 'success',
+                'ملغي': 'danger',
+                'لم يحضر': 'warning'
+            };
+            return colors[status] || 'secondary';
+        }
+    });
+</script>
+{% endblock %}
