@@ -1,4 +1,3 @@
-# app/__init__.py
 from flask import Flask, redirect
 from flask_cors import CORS
 from flask_sqlalchemy import SQLAlchemy
@@ -24,20 +23,13 @@ def create_app():
     app.config['SESSION_COOKIE_HTTPONLY'] = True
     app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'
     
-    # 🔴 تكوين قاعدة البيانات
-    database_url = os.environ.get('DATABASE_URL', '')
-    if database_url:
-        if database_url.startswith('postgres://'):
-            database_url = database_url.replace('postgres://', 'postgresql://')
-        app.config['SQLALCHEMY_DATABASE_URI'] = database_url
-    else:
-        app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql://postgres:0812@localhost:5432/test_DB'
+    # 🔴 تحميل التكوين المناسب
+    from config import DevelopmentConfig, ProductionConfig
     
-    app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
-    app.config['SQLALCHEMY_ENGINE_OPTIONS'] = {
-        'pool_recycle': 300,
-        'pool_pre_ping': True,
-    }
+    if os.environ.get('FLASK_ENV') == 'production':
+        app.config.from_object(ProductionConfig)
+    else:
+        app.config.from_object(DevelopmentConfig)
     
     # Initialize extensions with app
     db.init_app(app)
@@ -66,4 +58,24 @@ def create_app():
     def home():
         return redirect('/login')
     
-    return app  # ⚠️ لا يوجد before_first_request هنا
+    # إنشاء الجداول عند أول طلب (للتطوير)
+    @app.before_request
+    def create_tables_on_first_request():
+        """إنشاء الجداول عند أول طلب إذا لم تكن موجودة"""
+        if not hasattr(app, 'tables_created'):
+            with app.app_context():
+                try:
+                    # إنشاء الجداول فقط إذا لم تكن موجودة
+                    from sqlalchemy import inspect
+                    inspector = inspect(db.engine)
+                    existing_tables = inspector.get_table_names()
+                    
+                    if not existing_tables:
+                        db.create_all()
+                        app.logger.info("✅ Database tables created")
+                    
+                    app.tables_created = True
+                except Exception as e:
+                    app.logger.warning(f"⚠️ Table creation note: {e}")
+    
+    return app
